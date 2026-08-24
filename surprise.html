@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Birthday Surprise 🎉</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000000;
+            font-family: 'Montserrat', sans-serif;
+            color: #fff;
+        }
+
+        /* CANVAS BACKGROUND */
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 1s ease-in-out;
+        }
+        canvas.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* INTRO SCREEN & BUTTON */
+        #introScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            background: #000000;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 1.5s ease-in-out;
+        }
+        .start-btn {
+            background: linear-gradient(45deg, #d4af37, #ffdf73, #aa771c);
+            border: none;
+            padding: 20px 50px;
+            font-size: 24px;
+            font-weight: 700;
+            color: #000;
+            border-radius: 50px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.8);
+            transition: transform 0.3s, box-shadow 0.3s;
+            animation: pulse 2s infinite;
+        }
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(212, 175, 55, 0.8), inset 0 0 15px rgba(255, 255, 255, 1);
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.4); }
+            50% { box-shadow: 0 0 40px rgba(212, 175, 55, 0.8), 0 0 80px rgba(212, 175, 55, 0.2); }
+            100% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.4); }
+        }
+
+        /* BOTTOM CONTROLS */
+        .bottom-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            padding: 0 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .creator-tag {
+            font-size: 14px;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            transition: color 0.3s;
+            text-transform: capitalize;
+        }
+        .creator-tag:hover {
+            color: #d4af37;
+        }
+
+        /* VOLUME TOGGLE */
+        .volume-label {
+            cursor: pointer;
+            width: 26px;
+            height: 26px;
+            position: relative;
+            display: block;
+        }
+        #volume-checkbox {
+            display: none; 
+        }
+        .volume-label svg {
+            width: 100%;
+            height: 100%;
+            fill: rgba(255, 255, 255, 0.6);
+            transition: fill 0.3s, transform 0.2s;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .volume-label:hover svg {
+            fill: #d4af37;
+            transform: scale(1.1);
+        }
+        #volume-checkbox:checked ~ .icon-mute { opacity: 0; visibility: hidden; }
+        #volume-checkbox:checked ~ .icon-unmute { opacity: 1; visibility: visible; }
+        #volume-checkbox:not(:checked) ~ .icon-unmute { opacity: 0; visibility: hidden; }
+        #volume-checkbox:not(:checked) ~ .icon-mute { opacity: 1; visibility: visible; }
+
+        @media (max-width: 768px) {
+            .bottom-controls { padding: 0 20px; bottom: 20px; }
+            .creator-tag { font-size: 12px; }
+            .volume-label { width: 22px; height: 22px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background Audio -->
+    <audio id="bgMusic">
+        <source src="https://scontent-iev1-1.cdninstagram.com/o1/v/t2/f2/m78/AQO7cmMz_yMCxDSfm3BPyjzmoUesr71nKxnyk_hCIy-KLfu567LyXp4s89KNwuNjLLXKWYIPq1_Ef7z94Bl4KYeJelnMFXb-JsIwF3M.mp4?_nc_cat=105&_nc_sid=9ca052&_nc_ht=scontent-iev1-1.cdninstagram.com&_nc_ohc=hL_owl3VGxoQ7kNvwEZQNv_&efg=eyJ2ZW5jb2RlX3RhZyI6ImlnLXhwdmRzLmNsaXBzLmlnd3d3LUMzLmRhc2hfbG5faGVhYWNfdmJyM19hdWRpbyIsInZpZGVvX2lkIjpudWxsLCJvaWxfdXJsZ2VuX2FwcF9pZCI6OTM2NjE5NzQzMzkyNDU5LCJjbGllbnRfbmFtZSI6ImlnIiwieHB2X2Fzc2V0X2lkIjoyODAxMzA3MjU2ODI5OTA5NCwiYXNzZXRfYWdlX2RheXMiOjU2LCJ2aV91c2VjYXNlX2lkIjoxMDA5OSwiZHVyYXRpb25fcyI6MTEsImJpdHJhdGUiOjY4NzY4LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&ccb=17-1&_nc_gid=cnLuuYLMql3KwCNtmU0v8A&_nc_ss=7ba8c&_nc_zt=28&oh=00_AQFpHB1p9Va0il3rS23Q5AS4agyOxpnHzjmFyxFjkZiCJA&oe=6A8E5DA6">
+    </audio>
+
+    <!-- INTRO SCREEN -->
+    <div id="introScreen">
+        <button class="start-btn" id="startBtn">Unlock Magic ✨</button>
+        
+        <div class="bottom-controls" id="bottomControls">
+            <a href="https://www.instagram.com/herosalman1_929/" target="_blank" class="creator-tag">Made by : @Herosalman1</a>
+            
+            <label for="volume-checkbox" title="Toggle sound" class="volume-label">
+                <input type="checkbox" id="volume-checkbox" checked>
+                <svg class="icon-unmute" viewBox="0 0 24 24"><path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z"></path></svg>
+                <svg class="icon-mute" viewBox="0 0 24 24"><path d="M12,4L9.91,6.09L12,8.18M4.27,3L3,4.27L7.73,9H3V15H7L12,20V13.27L16.25,17.53C15.58,18.04 14.83,18.46 14,18.7V20.77C15.38,20.45 16.63,19.82 17.68,18.96L19.73,21L21,19.73L12,10.73M19,12C19,12.94 18.8,13.82 18.46,14.64L19.97,16.15C20.62,14.91 21,13.5 21,12C21,7.72 18,4.14 14,3.23V5.29C16.89,6.15 19,8.83 19,12M16.5,12C16.5,10.23 15.5,8.71 14,7.97V10.18L16.45,12.63C16.5,12.43 16.5,12.21 16.5,12Z"></path></svg>
+            </label>
+        </div>
+    </div>
+
+    <!-- MAIN FIREWORKS & TEXT ANIMATION CANVAS -->
+    <canvas id="c"></canvas>
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const friendName = urlParams.get('name') || 'SALMAN';
+
+        const bgMusic = document.getElementById('bgMusic');
+        const volumeCheckbox = document.getElementById('volume-checkbox');
+        volumeCheckbox.addEventListener('change', function() {
+            bgMusic.muted = !this.checked;
+        });
+
+        const startBtn = document.getElementById('startBtn');
+        const introScreen = document.getElementById('introScreen');
+        const canvasEl = document.getElementById('c');
+
+        let animationStarted = false;
+        let returnTimerStarted = false;
+
+        startBtn.addEventListener('click', () => {
+            bgMusic.currentTime = 0; // Reset music to start
+            bgMusic.muted = !volumeCheckbox.checked; 
+            bgMusic.play().catch(e => console.log("Autoplay blocked:", e));
+
+            returnTimerStarted = false;
+            gsap.to(introScreen, {
+                opacity: 0,
+                duration: 1,
+                ease: "power2.inOut",
+                onComplete: () => {
+                    introScreen.style.display = 'none';
+                    canvasEl.classList.add('active');
+                    animationStarted = true;
+                }
+            });
+        });
+
+        // Canvas Animation Engine
+        const c = document.getElementById('c');
+        const ctx = c.getContext('2d');
+
+        let w = c.width = window.innerWidth;
+        let h = c.height = window.innerHeight;
+        let hw = w / 2;
+        let hh = h / 2;
+
+        const opts = {
+            strings: ['HAPPY', 'BIRTHDAY', friendName.toUpperCase()],
+            charSize: 30,
+            charSpacing: 34,
+            lineHeight: 42,
+            
+            cx: w / 2,
+            cy: h / 2,
+            
+            fireworkPrevPoints: 10,
+            fireworkBaseLineWidth: 5,
+            fireworkAddedLineWidth: 8,
+            fireworkSpawnTime: 200,
+            fireworkBaseReachTime: 30,
+            fireworkAddedReachTime: 30,
+            fireworkCircleBaseSize: 20,
+            fireworkCircleAddedSize: 10,
+            fireworkCircleBaseTime: 30,
+            fireworkCircleAddedTime: 30,
+            fireworkCircleFadeBaseTime: 10,
+            fireworkCircleFadeAddedTime: 5,
+            fireworkBaseShards: 6,
+            fireworkAddedShards: 6,
+            fireworkShardPrevPoints: 3,
+            fireworkShardBaseVel: 4,
+            fireworkShardAddedVel: 2,
+            fireworkShardBaseSize: 3,
+            fireworkShardAddedSize: 3,
+            gravity: 0.1,
+            upFlow: -0.1,
+            letterContemplatingWaitTime: 360,
+            balloonSpawnTime: 20,
+            balloonBaseInflateTime: 10,
+            balloonAddedInflateTime: 10,
+            balloonBaseSize: 20,
+            balloonAddedSize: 20,
+            balloonBaseVel: 0.4,
+            balloonAddedVel: 0.4,
+            balloonBaseRadian: -(Math.PI / 2 - 0.5),
+            balloonAddedRadian: -1
+        };
+
+        const maxLen = Math.max(opts.strings[0].length, opts.strings[1].length, opts.strings[2].length);
+        const calc = {
+            totalWidth: opts.charSpacing * maxLen
+        };
+
+        const Tau = Math.PI * 2;
+        const TauQuarter = Tau / 4;
+
+        ctx.font = 'bold ' + opts.charSize + 'px Verdana, sans-serif';
+
+        function Letter(char, x, y) {
+            this.char = char;
+            this.x = x;
+            this.y = y;
+            
+            this.dx = -ctx.measureText(char).width / 2;
+            this.dy = opts.charSize / 2;
+            this.fireworkDy = this.y - hh;
+            
+            const hue = (x / calc.totalWidth) * 360;
+            this.color = `hsl(${hue}, 85%, 55%)`;
+            this.lightAlphaColor = `hsla(${hue}, 85%, light%, alp)`;
+            this.lightColor = `hsl(${hue}, 85%, light%)`;
+            this.alphaColor = `hsla(${hue}, 85%, 55%, alp)`;
+            
+            this.reset();
+        }
+
+        Letter.prototype.reset = function() {
+            this.phase = 'firework';
+            this.tick = 0;
+            this.spawned = false;
+            this.spawningTime = (opts.fireworkSpawnTime * Math.random()) | 0;
+            this.reachTime = (opts.fireworkBaseReachTime + opts.fireworkAddedReachTime * Math.random()) | 0;
+            this.lineWidth = opts.fireworkBaseLineWidth + opts.fireworkAddedLineWidth * Math.random();
+            this.prevPoints = [[0, hh, 0]];
+        };
+
+        Letter.prototype.step = function() {
+            if (this.phase === 'firework') {
+                if (!this.spawned) {
+                    ++this.tick;
+                    if (this.tick >= this.spawningTime) {
+                        this.tick = 0;
+                        this.spawned = true;
+                    }
+                } else {
+                    ++this.tick;
+                    const linearProportion = this.tick / this.reachTime;
+                    const armonicProportion = Math.sin(linearProportion * TauQuarter);
+                    
+                    const x = linearProportion * this.x;
+                    const y = hh + armonicProportion * this.fireworkDy;
+                    
+                    if (this.prevPoints.length > opts.fireworkPrevPoints) {
+                        this.prevPoints.shift();
+                    }
+                    this.prevPoints.push([x, y, linearProportion * this.lineWidth]);
+                    
+                    const lineWidthProportion = 1 / (this.prevPoints.length - 1);
+                    
+                    for (let i = 1; i < this.prevPoints.length; ++i) {
+                        const point = this.prevPoints[i];
+                        const point2 = this.prevPoints[i - 1];
+                        
+                        ctx.strokeStyle = this.alphaColor.replace('alp', i / this.prevPoints.length);
+                        ctx.lineWidth = point[2] * lineWidthProportion * i;
+                        ctx.beginPath();
+                        ctx.moveTo(point[0], point[1]);
+                        ctx.lineTo(point2[0], point2[1]);
+                        ctx.stroke();
+                    }
+                    
+                    if (this.tick >= this.reachTime) {
+                        this.phase = 'contemplate';
+                        this.circleFinalSize = opts.fireworkCircleBaseSize + opts.fireworkCircleAddedSize * Math.random();
+                        this.circleCompleteTime = (opts.fireworkCircleBaseTime + opts.fireworkCircleAddedTime * Math.random()) | 0;
+                        this.circleCreating = true;
+                        this.circleFading = false;
+                        
+                        this.circleFadeTime = (opts.fireworkCircleFadeBaseTime + opts.fireworkCircleFadeAddedTime * Math.random()) | 0;
+                        this.tick = 0;
+                        this.tick2 = 0;
+                        this.shards = [];
+                        
+                        const shardCount = (opts.fireworkBaseShards + opts.fireworkAddedShards * Math.random()) | 0;
+                        const angle = Tau / shardCount;
+                        const cos = Math.cos(angle);
+                        const sin = Math.sin(angle);
+                        
+                        let sx = 1, sy = 0;
+                        for (let i = 0; i < shardCount; ++i) {
+                            const x1 = sx;
+                            sx = sx * cos - sy * sin;
+                            sy = sy * cos + x1 * sin;
+                            this.shards.push(new Shard(this.x, this.y, sx, sy, this.alphaColor));
+                        }
+                    }
+                }
+            } else if (this.phase === 'contemplate') {
+                ++this.tick;
+                
+                if (this.circleCreating) {
+                    ++this.tick2;
+                    const proportion = this.tick2 / this.circleCompleteTime;
+                    const armonic = -Math.cos(proportion * Math.PI) / 2 + 0.5;
+                    
+                    ctx.beginPath();
+                    ctx.fillStyle = this.lightAlphaColor.replace('light', 50 + 50 * proportion).replace('alp', proportion);
+                    ctx.arc(this.x, this.y, armonic * this.circleFinalSize, 0, Tau);
+                    ctx.fill();
+                    
+                    if (this.tick2 > this.circleCompleteTime) {
+                        this.tick2 = 0;
+                        this.circleCreating = false;
+                        this.circleFading = true;
+                    }
+                } else if (this.circleFading) {
+                    ctx.fillStyle = this.lightColor.replace('light', 70);
+                    ctx.fillText(this.char, this.x + this.dx, this.y + this.dy);
+                    
+                    ++this.tick2;
+                    const proportion = this.tick2 / this.circleFadeTime;
+                    const armonic = -Math.cos(proportion * Math.PI) / 2 + 0.5;
+                    
+                    ctx.beginPath();
+                    ctx.fillStyle = this.lightAlphaColor.replace('light', 100).replace('alp', 1 - armonic);
+                    ctx.arc(this.x, this.y, this.circleFinalSize, 0, Tau);
+                    ctx.fill();
+                    
+                    if (this.tick2 >= this.circleFadeTime) {
+                        this.circleFading = false;
+                    }
+                } else {
+                    ctx.fillStyle = this.lightColor.replace('light', 70);
+                    ctx.fillText(this.char, this.x + this.dx, this.y + this.dy);
+                }
+                
+                for (let i = 0; i < this.shards.length; ++i) {
+                    this.shards[i].step();
+                    if (!this.shards[i].alive) {
+                        this.shards.splice(i, 1);
+                        --i;
+                    }
+                }
+                
+                if (this.tick > opts.letterContemplatingWaitTime) {
+                    this.phase = 'balloon';
+                    this.tick = 0;
+                    this.spawning = true;
+                    this.spawnTime = (opts.balloonSpawnTime * Math.random()) | 0;
+                    this.inflating = false;
+                    this.inflateTime = (opts.balloonBaseInflateTime + opts.balloonAddedInflateTime * Math.random()) | 0;
+                    this.size = (opts.balloonBaseSize + opts.balloonAddedSize * Math.random()) | 0;
+                    
+                    const rad = opts.balloonBaseRadian + opts.balloonAddedRadian * Math.random();
+                    const vel = opts.balloonBaseVel + opts.balloonAddedVel * Math.random();
+                    
+                    this.vx = Math.cos(rad) * vel;
+                    this.vy = Math.sin(rad) * vel;
+                }
+            } else if (this.phase === 'balloon') {
+                ctx.strokeStyle = this.lightColor.replace('light', 80);
+                
+                if (this.spawning) {
+                    ++this.tick;
+                    ctx.fillStyle = this.lightColor.replace('light', 70);
+                    ctx.fillText(this.char, this.x + this.dx, this.y + this.dy);
+                    
+                    if (this.tick >= this.spawnTime) {
+                        this.tick = 0;
+                        this.spawning = false;
+                        this.inflating = true;
+                    }
+                } else if (this.inflating) {
+                    ++this.tick;
+                    const proportion = this.tick / this.inflateTime;
+                    const bx = this.cx = this.x;
+                    const by = this.cy = this.y - this.size * proportion;
+                    
+                    ctx.fillStyle = this.alphaColor.replace('alp', proportion);
+                    ctx.beginPath();
+                    generateBalloonPath(bx, by, this.size * proportion);
+                    ctx.fill();
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(bx, by);
+                    ctx.lineTo(bx, this.y);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = this.lightColor.replace('light', 70);
+                    ctx.fillText(this.char, this.x + this.dx, this.y + this.dy);
+                    
+                    if (this.tick >= this.inflateTime) {
+                        this.tick = 0;
+                        this.inflating = false;
+                    }
+                } else {
+                    this.cx += this.vx;
+                    this.cy += this.vy += opts.upFlow;
+                    
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    generateBalloonPath(this.cx, this.cy, this.size);
+                    ctx.fill();
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(this.cx, this.cy);
+                    ctx.lineTo(this.cx, this.cy + this.size);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = this.lightColor.replace('light', 70);
+                    ctx.fillText(this.char, this.cx + this.dx, this.cy + this.dy + this.size);
+                    
+                    if (this.cy + this.size < -hh || this.cx < -hw || this.cy > hw) {
+                        this.phase = 'done';
+                    }
+                }
+            }
+        };
+
+        function Shard(x, y, vx, vy, color) {
+            const vel = opts.fireworkShardBaseVel + opts.fireworkShardAddedVel * Math.random();
+            this.vx = vx * vel;
+            this.vy = vy * vel;
+            this.x = x;
+            this.y = y;
+            this.prevPoints = [[x, y]];
+            this.color = color;
+            this.alive = true;
+            this.size = opts.fireworkShardBaseSize + opts.fireworkShardAddedSize * Math.random();
+        }
+
+        Shard.prototype.step = function() {
+            this.x += this.vx;
+            this.y += this.vy += opts.gravity;
+            
+            if (this.prevPoints.length > opts.fireworkShardPrevPoints) {
+                this.prevPoints.shift();
+            }
+            this.prevPoints.push([this.x, this.y]);
+            
+            const lineWidthProportion = this.size / this.prevPoints.length;
+            
+            for (let k = 0; k < this.prevPoints.length - 1; ++k) {
+                const point = this.prevPoints[k];
+                const point2 = this.prevPoints[k + 1];
+                
+                ctx.strokeStyle = this.color.replace('alp', k / this.prevPoints.length);
+                ctx.lineWidth = k * lineWidthProportion;
+                ctx.beginPath();
+                ctx.moveTo(point[0], point[1]);
+                ctx.lineTo(point2[0], point2[1]);
+                ctx.stroke();
+            }
+            
+            if (this.prevPoints[0][1] > hh) {
+                this.alive = false;
+            }
+        };
+
+        function generateBalloonPath(x, y, size) {
+            ctx.moveTo(x, y);
+            ctx.bezierCurveTo(x - size / 2, y - size / 2, x - size / 4, y - size, x, y - size);
+            ctx.bezierCurveTo(x + size / 4, y - size, x + size / 2, y - size / 2, x, y);
+        }
+
+        const letters = [];
+
+        function initLetters() {
+            letters.length = 0;
+            let startY = - (opts.strings.length * opts.lineHeight) / 2;
+
+            for (let i = 0; i < opts.strings.length; ++i) {
+                const str = opts.strings[i];
+                let rowWidth = str.length * opts.charSpacing;
+                
+                for (let j = 0; j < str.length; ++j) {
+                    let charX = j * opts.charSpacing + opts.charSpacing / 2 - rowWidth / 2;
+                    let charY = i * opts.lineHeight + opts.lineHeight / 2 + startY;
+                    letters.push(new Letter(str[j], charX, charY));
+                }
+            }
+        }
+
+        initLetters();
+
+        function anim() {
+            window.requestAnimationFrame(anim);
+            
+            ctx.fillStyle = '#111111';
+            ctx.fillRect(0, 0, w, h);
+            
+            if (!animationStarted) return;
+
+            ctx.translate(hw, hh);
+            
+            let done = true;
+            for (let l = 0; l < letters.length; ++l) {
+                letters[l].step();
+                if (letters[l].phase !== 'done') {
+                    done = false;
+                }
+            }
+            
+            ctx.translate(-hw, -hh);
+            
+            // Jab sabhi balloons upar chale jayein aur animation khatam ho jaye
+            if (done && !returnTimerStarted) {
+                returnTimerStarted = true;
+                // 1 second delay ke baad wapas 1st page par aana
+                setTimeout(() => {
+                    animationStarted = false;
+                    canvasEl.classList.remove('active');
+                    introScreen.style.display = 'flex';
+                    gsap.to(introScreen, {
+                        opacity: 1,
+                        duration: 1.5,
+                        ease: "power2.inOut"
+                    });
+                    initLetters(); // Reset letters for next time
+                }, 1000);
+            }
+        }
+
+        anim();
+
+        window.addEventListener('resize', function() {
+            w = c.width = window.innerWidth;
+            h = c.height = window.innerHeight;
+            hw = w / 2;
+            hh = h / 2;
+            ctx.font = 'bold ' + opts.charSize + 'px Verdana, sans-serif';
+        });
+    </script>
+</body>
+</html>
