@@ -18,6 +18,11 @@
             background: #000000;
             font-family: 'Montserrat', sans-serif;
             color: #fff;
+            /* Text selection block karna taaki content copy na ho sake */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
 
         /* CANVAS BACKGROUND */
@@ -168,6 +173,29 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
     <script>
+        // ----------------------------------------------------
+        // SECURITY & ANTI-INSPECT SCRIPTS (BLOCKS RIGHT CLICK & SHORTCUTS)
+        // ----------------------------------------------------
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || e.keyCode === 123) {
+                e.preventDefault();
+                return false;
+            }
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c' || e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) {
+                e.preventDefault();
+                return false;
+            }
+            if (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.keyCode === 85)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+        // ----------------------------------------------------
+
         // URL se key read karke localStorage se real name fetch karna
         const urlParams = new URLSearchParams(window.location.search);
         const shortKey = urlParams.get('key');
@@ -191,7 +219,7 @@
         let returnTimerStarted = false;
 
         startBtn.addEventListener('click', () => {
-            bgMusic.currentTime = 0; 
+            bgMusic.currentTime = 0; // Reset music to start
             bgMusic.muted = !volumeCheckbox.checked; 
             bgMusic.play().catch(e => console.log("Autoplay blocked:", e));
 
@@ -566,8 +594,10 @@
             
             ctx.translate(-hw, -hh);
             
+            // Jab sabhi balloons upar chale jayein aur animation khatam ho jaye
             if (done && !returnTimerStarted) {
                 returnTimerStarted = true;
+                // 1 second delay ke baad wapas 1st page par aana
                 setTimeout(() => {
                     animationStarted = false;
                     canvasEl.classList.remove('active');
@@ -577,7 +607,7 @@
                         duration: 1.5,
                         ease: "power2.inOut"
                     });
-                    initLetters(); 
+                    initLetters(); // Reset letters for next time
                 }, 1000);
             }
         }
