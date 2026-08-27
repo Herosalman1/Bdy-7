@@ -168,8 +168,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
     <script>
+        // URL se key read karke localStorage se real name fetch karna
         const urlParams = new URLSearchParams(window.location.search);
-        const friendName = urlParams.get('name') || 'SALMAN';
+        const shortKey = urlParams.get('key');
+        let friendName = 'SALMAN';
+
+        if (shortKey && localStorage.getItem(shortKey)) {
+            friendName = localStorage.getItem(shortKey);
+        }
 
         const bgMusic = document.getElementById('bgMusic');
         const volumeCheckbox = document.getElementById('volume-checkbox');
@@ -185,7 +191,7 @@
         let returnTimerStarted = false;
 
         startBtn.addEventListener('click', () => {
-            bgMusic.currentTime = 0; // Reset music to start
+            bgMusic.currentTime = 0; 
             bgMusic.muted = !volumeCheckbox.checked; 
             bgMusic.play().catch(e => console.log("Autoplay blocked:", e));
 
@@ -560,10 +566,8 @@
             
             ctx.translate(-hw, -hh);
             
-            // Jab sabhi balloons upar chale jayein aur animation khatam ho jaye
             if (done && !returnTimerStarted) {
                 returnTimerStarted = true;
-                // 1 second delay ke baad wapas 1st page par aana
                 setTimeout(() => {
                     animationStarted = false;
                     canvasEl.classList.remove('active');
@@ -573,7 +577,7 @@
                         duration: 1.5,
                         ease: "power2.inOut"
                     });
-                    initLetters(); // Reset letters for next time
+                    initLetters(); 
                 }, 1000);
             }
         }
