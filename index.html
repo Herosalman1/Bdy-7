@@ -162,12 +162,17 @@
         return;
       }
       
+      // Short key generate karke localStorage me name secure store karna
+      const shortKey = 'bday_' + Math.floor(Math.random() * 90000 + 10000);
+      localStorage.setItem(shortKey, name);
+      
       const currentUrl = window.location.href.split('?')[0];
       let baseUrl = currentUrl.replace('index.html', '');
       if (!baseUrl.endsWith('/')) baseUrl += '/';
       baseUrl += 'surprise.html';
       
-      const fullUrl = `${baseUrl}?name=${encodeURIComponent(name)}`;
+      // URL mein naam nahi aayega, sirf short key aayegi
+      const fullUrl = `${baseUrl}?key=${shortKey}`;
       
       document.getElementById('generatedUrl').value = fullUrl;
       document.getElementById('resultBox').style.display = 'flex';
